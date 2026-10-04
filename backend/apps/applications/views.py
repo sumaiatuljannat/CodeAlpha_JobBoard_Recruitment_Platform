@@ -107,11 +107,29 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
 
         # Notify Candidate
         status_readable = application.get_status_display()
+        if new_status == JobApplication.Status.INTERVIEW:
+            title = f'Interview invitation: {application.job.title}'
+            message = (
+                f'You have been selected for an interview for {application.job.title} '
+                f'at {application.job.company.name}. The recruiter will follow up with scheduling details.'
+            )
+            if note.strip():
+                message = f'{message}\n\nRecruiter message: {note.strip()}'
+        else:
+            title = f'Update on your application for {application.job.title}'
+            message = (
+                f"Your application status has been updated to '{status_readable}' "
+                f'by {application.job.company.name}.'
+            )
         Notification.objects.create(
             recipient=application.candidate.user,
-            title=f"Update on your application for {application.job.title}",
-            message=f"Your application status has been updated to '{status_readable}' by {application.job.company.name}.",
-            notification_type=Notification.NotificationType.APPLICATION_STATUS,
+            title=title,
+            message=message,
+            notification_type=(
+                Notification.NotificationType.INTERVIEW_INVITE
+                if new_status == JobApplication.Status.INTERVIEW
+                else Notification.NotificationType.APPLICATION_STATUS
+            ),
             action_url="/candidate/applications"
         )
 

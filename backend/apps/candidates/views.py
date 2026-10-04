@@ -138,7 +138,7 @@ class CertificationViewSet(viewsets.ModelViewSet):
 
 class ResumeViewSet(viewsets.ModelViewSet):
     serializer_class = ResumeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsCandidate]
 
     def get_queryset(self):
         if hasattr(self.request.user, 'candidate_profile'):

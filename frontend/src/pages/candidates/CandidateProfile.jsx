@@ -8,6 +8,7 @@ import {
   Clock3,
   Download,
   ExternalLink,
+  FileText,
   Globe,
   GraduationCap,
   MapPin,
@@ -16,9 +17,11 @@ import {
   Sparkles,
   Star,
   Target,
+  Upload,
 } from 'lucide-react';
-import api from '../../api/client';
+import api, { API_BASE_URL } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 const formatMoney = (value) => {
   const num = Number(value || 0);
@@ -26,10 +29,22 @@ const formatMoney = (value) => {
   return `$${num.toLocaleString()}`;
 };
 
+const getResumeUrl = (resume) => {
+  const url = resume?.file_url_display || resume?.file_url || resume?.file;
+  if (!url) return '';
+  try {
+    return new URL(url, API_BASE_URL).toString();
+  } catch {
+    return '';
+  }
+};
+
 export const CandidateProfilePage = () => {
   const { user } = useAuth();
+  const { success, error } = useToast();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [uploadingResume, setUploadingResume] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,6 +86,58 @@ export const CandidateProfilePage = () => {
   const projects = profile?.projects || [];
   const certifications = profile?.certifications || [];
   const resumes = profile?.resumes || [];
+  const defaultResume = resumes.find((resume) => resume.is_default) || resumes[0];
+
+  const refreshProfile = async () => {
+    const response = await api.get('/api/candidates/profiles/me/');
+    setProfile(response.data || null);
+  };
+
+  const handleResumeUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!['pdf', 'doc', 'docx'].includes(extension)) {
+      error('Upload a PDF, DOC, or DOCX file.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      error('CV files must be 10 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', file.name.replace(/\.[^.]+$/, '') || 'My CV');
+    formData.append('file', file);
+
+    try {
+      setUploadingResume(true);
+      await api.post('/api/candidates/resumes/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      await refreshProfile();
+      success('Your CV has been uploaded.');
+    } catch (err) {
+      const detail = err.response?.data?.file?.[0] || err.response?.data?.detail;
+      error(detail || 'Could not upload your CV.');
+    } finally {
+      setUploadingResume(false);
+      event.target.value = '';
+    }
+  };
+
+  const setDefaultResume = async (resumeId) => {
+    try {
+      await api.post(`/api/candidates/resumes/${resumeId}/set_default/`);
+      await refreshProfile();
+      success('Default CV updated.');
+    } catch (err) {
+      error('Could not update your default CV.');
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -102,10 +169,22 @@ export const CandidateProfilePage = () => {
                 <PencilLine className="w-4 h-4" />
                 Edit profile
               </Link>
-              <button className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700">
-                <Download className="w-4 h-4" />
-                Download CV
-              </button>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700">
+                <Upload className="w-4 h-4" />
+                {uploadingResume ? 'Uploading...' : 'Upload CV'}
+                <input type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={handleResumeUpload} disabled={uploadingResume} />
+              </label>
+              {defaultResume && (
+                <a
+                  href={getResumeUrl(defaultResume)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Download className="w-4 h-4" />
+                  View CV
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -264,6 +343,30 @@ export const CandidateProfilePage = () => {
                   </a>
                 </div>
               </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="w-4 h-4 text-brand-600" />
+                <h2 className="text-lg font-bold text-slate-900">My CVs</h2>
+              </div>
+              {resumes.length ? (
+                <div className="space-y-2">
+                  {resumes.map((resume) => (
+                    <div key={resume.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-800">{resume.title}</p>
+                        <p className="text-xs text-slate-500">{resume.file_extension?.toUpperCase()} · {resume.file_size_kb} KB{resume.is_default ? ' · Default' : ''}</p>
+                      </div>
+                      {!resume.is_default && (
+                        <button type="button" onClick={() => setDefaultResume(resume.id)} className="shrink-0 text-xs font-semibold text-brand-700 hover:text-brand-900">Set default</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">Upload a PDF, DOC, or DOCX CV to share it with recruiters when you apply.</p>
+              )}
             </section>
 
             <section className="rounded-3xl border border-slate-200 bg-white p-5">

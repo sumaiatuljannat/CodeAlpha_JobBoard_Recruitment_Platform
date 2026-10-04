@@ -13,6 +13,7 @@ import { Register } from './pages/auth/Register';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
 import { CandidateProfilePage } from './pages/candidates/CandidateProfile';
 import { CandidateSavedJobs } from './pages/candidates/CandidateSavedJobs';
+import { EmployerApplicants } from './pages/employers/EmployerApplicants';
 
 const stats = [
   { label: 'Open Roles', value: '128', tone: 'bg-brand-50 text-brand-700' },
@@ -293,43 +294,7 @@ function App() {
                   path="/employer/ats"
                   element={
                     <ProtectedRoute allowedRoles={['employer']}>
-                      <DashboardPage
-                        role="Employer"
-                        title="Kanban pipeline"
-                        subtitle="Visualize candidates by stage, review team notes, and move talent quickly through hiring stages."
-                        items={[
-                          {
-                            title: 'Candidate flow',
-                            badge: 'Healthy',
-                            badgeClass: 'bg-emerald-50 text-emerald-700',
-                            rows: [
-                              { label: 'Applied', value: '114' },
-                              { label: 'Screening', value: '37' },
-                              { label: 'Interview', value: '21' },
-                            ],
-                          },
-                          {
-                            title: 'Team workload',
-                            badge: 'Balanced',
-                            badgeClass: 'bg-violet-50 text-violet-700',
-                            rows: [
-                              { label: 'Reviewers online', value: '7' },
-                              { label: 'Avg. cycle time', value: '4.2d' },
-                              { label: 'SLAs met', value: '92%' },
-                            ],
-                          },
-                          {
-                            title: 'Hiring notes',
-                            badge: 'Updated',
-                            badgeClass: 'bg-sky-50 text-sky-700',
-                            rows: [
-                              { label: 'Comments this week', value: '61' },
-                              { label: 'Follow-ups due', value: '8' },
-                              { label: 'Feedback loops', value: '14' },
-                            ],
-                          },
-                        ]}
-                      />
+                      <EmployerApplicants />
                     </ProtectedRoute>
                   }
                 />
@@ -338,43 +303,7 @@ function App() {
                   path="/employer/candidates"
                   element={
                     <ProtectedRoute allowedRoles={['employer']}>
-                      <DashboardPage
-                        role="Employer"
-                        title="Talent search"
-                        subtitle="Search, shortlist, and engage the best-fit candidates for your upcoming hires."
-                        items={[
-                          {
-                            title: 'Talent pool',
-                            badge: '2,418',
-                            badgeClass: 'bg-brand-50 text-brand-700',
-                            rows: [
-                              { label: 'Active profiles', value: '1,252' },
-                              { label: 'Verified', value: '842' },
-                              { label: 'Open to work', value: '618' },
-                            ],
-                          },
-                          {
-                            title: 'Top skills',
-                            badge: 'Popular',
-                            badgeClass: 'bg-emerald-50 text-emerald-700',
-                            rows: [
-                              { label: 'React', value: '291' },
-                              { label: 'Python', value: '216' },
-                              { label: 'Data', value: '184' },
-                            ],
-                          },
-                          {
-                            title: 'Engagement',
-                            badge: 'Responsive',
-                            badgeClass: 'bg-violet-50 text-violet-700',
-                            rows: [
-                              { label: 'Responses', value: '73%' },
-                              { label: 'Avg. response time', value: '2h' },
-                              { label: 'Saved searches', value: '17' },
-                            ],
-                          },
-                        ]}
-                      />
+                      <EmployerApplicants />
                     </ProtectedRoute>
                   }
                 />
